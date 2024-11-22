@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asynchronous JavaScript and Timers</title>
+    <style>
+        #character-container div {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        #character-container img {
+            width: 100px;
+            height: auto;
+        }
+        #timer {
+            font-size: 2rem;
+            margin: 20px 0;
+        }
+        #notifications {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Marvel Comics Characters</h1>
+    <div id="character-container"></div>
+
+    <h1>Countdown Timer</h1>
+    <div>
+        <input type="number" id="timer-input" placeholder="Enter seconds" />
+        <button id="start-timer">Start Timer</button>
+        <div id="timer">00:00</div>
+    </div>
+
+    <h1>Notifications</h1>
+    <button id="show-notification">Show Notification</button>
+    <button id="repeat-notification">Start Repeated Notifications</button>
+    <button id="stop-notifications">Stop Repeated Notifications</button>
+    <div id="notifications"></div>
+
+    <script>
+        // Marvel API Configuration
+        const fetchCharacters = async () => {
+            const apiKey = "your_api_key"; // Replace with your API key
+            const ts = "1"; // Timestamp for authentication
+            const hash = "your_generated_hash"; // Replace with your generated hash
+            const baseUrl = "https://gateway.marvel.com/v1/public/characters";
+
+            try {
+                const response = await fetch(`${baseUrl}?ts=${ts}&apikey=${apiKey}&hash=${hash}`);
+                if (!response.ok) throw new Error("Failed to fetch characters");
+
+                const data = await response.json();
+                console.log(data.data.results); // Log fetched characters
+                return data.data.results;
+            } catch (error) {
+                console.error("Error fetching characters:", error);
+            }
+        };
+
+        const displayCharacters = async () => {
+            const characters = await fetchCharacters();
+            const container = document.getElementById("character-container");
+
+            characters.forEach(character => {
+                const charDiv = document.createElement("div");
+                charDiv.innerHTML = `
+                    <h2>${character.name}</h2>
+                    <img src="${character.thumbnail.path}.${character.thumbnail.extension}" alt="${character.name}" />
+                    <p>${character.description || "No description available."}</p>
+                `;
+                container.appendChild(charDiv);
+            });
+        };
+
+        document.addEventListener("DOMContentLoaded", displayCharacters);
+
+        // Countdown Timer
+        let countdownInterval;
+        const startCountdown = () => {
+            const timerInput = document.getElementById("timer-input");
+            let duration = parseInt(timerInput.value);
+            const timerDisplay = document.getElementById("timer");
+
+            clearInterval(countdownInterval);
+
+            countdownInterval = setInterval(() => {
+                if (duration <= 0) {
+                    clearInterval(countdownInterval);
+                    timerDisplay.textContent = "00:00";
+                    alert("Time's up!");
+                    return;
+                }
+                const minutes = String(Math.floor(duration / 60)).padStart(2, "0");
+                const seconds = String(duration % 60).padStart(2, "0");
+                timerDisplay.textContent = `${minutes}:${seconds}`;
+                duration--;
+            }, 1000);
+        };
+
+        document.getElementById("start-timer").addEventListener("click", startCountdown);
+
+        // Notifications
+        let notificationInterval;
+
+        const showNotification = (message, container) => {
+            const notification = document.createElement("div");
+            notification.textContent = message;
+            notification.style.border = "1px solid black";
+            notification.style.padding = "10px";
+            notification.style.margin = "10px 0";
+            container.appendChild(notification);
+        };
+
+        const delayedNotification = () => {
+            const notifications = document.getElementById("notifications");
+            setTimeout(() => {
+                showNotification("This is a delayed notification!", notifications);
+            }, 3000);
+        };
+
+        const startRepeatNotifications = () => {
+            const notifications = document.getElementById("notifications");
+            stopRepeatNotifications();
+            notificationInterval = setInterval(() => {
+                showNotification("This is a repeated notification!", notifications);
+            }, 2000);
+        };
+
+        const stopRepeatNotifications = () => {
+            clearInterval(notificationInterval);
+        };
+
+        document.getElementById("show-notification").addEventListener("click", delayedNotification);
+        document.getElementById("repeat-notification").addEventListener("click", startRepeatNotifications);
+        document.getElementById("stop-notifications").addEventListener("click", stopRepeatNotifications);
+    </script>
+</body>
+</html>
